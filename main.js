@@ -22,9 +22,20 @@ let tray = null;
 let settings = { sendEnter: true, sendTab: false };
 
 function createWindow() {
+  // Icon-Pfad definieren (passend für das Betriebssystem)
+  let iconPath;
+  if (process.platform === 'win32') {
+    iconPath = path.join(__dirname, 'icons', 'icon.ico'); // Windows ICO
+  } else if (process.platform === 'darwin') {
+    iconPath = path.join(__dirname, 'icons', 'icon.icns'); // macOS ICNS
+  } else {
+    iconPath = path.join(__dirname, 'icons', 'icon-256x256.png'); // Linux PNG
+  }
+
   mainWindow = new BrowserWindow({
     width: 400,
     height: 700,
+    icon: iconPath, // App-Icon hinzufügen
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -51,13 +62,21 @@ app.whenReady().then(() => {
   });
 
   createWindow();
-  // Tray icon
-  tray = new Tray(nativeImage.createEmpty()); // Replace with your icon
+  
+  // Tray icon mit korrektem App-Icon
+  let trayIconPath;
+  if (process.platform === 'darwin') {
+    trayIconPath = path.join(__dirname, 'icons', 'icon-32x32.png'); // macOS Tray bevorzugt kleinere Icons
+  } else {
+    trayIconPath = path.join(__dirname, 'icons', 'icon-32x32.png'); // Windows/Linux
+  }
+  
+  tray = new Tray(trayIconPath);
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Show', click: () => mainWindow.show() },
-    { label: 'Quit', click: () => app.quit() }
+    { label: 'QR Scanner anzeigen', click: () => mainWindow.show() },
+    { label: 'Beenden', click: () => app.quit() }
   ]);
-  tray.setToolTip('Virtual QRCode Scanner');
+  tray.setToolTip('QR Scanner Pro - Virtueller QR-Code Scanner');
   tray.setContextMenu(contextMenu);
   tray.on('double-click', () => mainWindow.show());
 });

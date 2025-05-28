@@ -4,10 +4,35 @@
   "description": "Electron app for live QR/Barcode scanning and keyboard emulation.",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "build-win": "electron-builder --win",
+    "build-linux": "electron-builder --linux"
   },
   "author": "",
   "license": "MIT",
+  "build": {
+    "appId": "com.qrscanner.virtual",
+    "productName": "QR Scanner Pro",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!test-*.png"
+    ],
+    "mac": {
+      "icon": "icons/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "icon": "icons/icon.ico"
+    },
+    "linux": {
+      "icon": "icons/icon-512x512.png"
+    }
+  },
   "dependencies": {
     "@zxing/browser": "^0.1.0",
     "canvas": "^3.1.0",
