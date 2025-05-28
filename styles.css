@@ -89,10 +89,6 @@ body {
   border: 1px solid var(--border-color);
 }
 
-.camera-controls {
-  margin-bottom: 1.5rem;
-}
-
 .form-group {
   margin-bottom: 1rem;
 }

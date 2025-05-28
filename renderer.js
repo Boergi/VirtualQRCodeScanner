@@ -30,6 +30,8 @@ let isPaused = false;
 let lastScannedCode = null;
 let pauseTimeout = null;
 let countdownInterval = null;
+let pendingCode = null; // Für Code-Bestätigung
+let codeConfirmationCount = 0; // Anzahl der Bestätigungen
 
 // Status-Update-Funktion für moderne UI
 function updateStatus(message, type = 'scanning') {
@@ -66,6 +68,144 @@ function showCountdown(seconds) {
 // Loading-Overlay für Video
 function showVideoLoading(show = true) {
   videoOverlay.style.display = show ? 'flex' : 'none';
+}
+
+// Funktion zur Validierung von erkannten Codes
+function isValidTextCode(text) {
+  if (!text || typeof text !== 'string') {
+    return false;
+  }
+  
+  // Mindestlänge und Maximallänge prüfen
+  if (text.length < 3 || text.length > 100) {
+    return false;
+  }
+  
+  // URLs und Web-Links ignorieren
+  const urlPatterns = [
+    /^https?:\/\//i,           // http:// oder https://
+    /^ftp:\/\//i,              // ftp://
+    /^www\./i,                 // www.
+    /\.(com|org|net|de|co|io|app|gov|edu|mil)/i, // Domain-Endungen
+    /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i, // Domain-Format
+  ];
+  
+  if (urlPatterns.some(pattern => pattern.test(text))) {
+    console.log('URL/Domain erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // E-Mail-Adressen ignorieren
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (emailPattern.test(text)) {
+    console.log('E-Mail erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // Telefonnummern ignorieren (verschiedene Formate)
+  const phonePatterns = [
+    /^\+?[\d\s\-\(\)]{10,}$/,  // Internationale Nummern
+    /^[\d\s\-\(\)]{10,}$/,     // Lokale Nummern
+  ];
+  
+  if (phonePatterns.some(pattern => pattern.test(text))) {
+    console.log('Telefonnummer erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // JSON/XML-artige Strukturen ignorieren
+  if (text.startsWith('{') || text.startsWith('[') || text.startsWith('<')) {
+    console.log('Strukturierte Daten erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // WiFi-QR-Codes ignorieren (WIFI:T:WPA;S:NetworkName;P:password;;)
+  if (text.startsWith('WIFI:') || text.includes('SSID:') || text.includes('PASSWORD:')) {
+    console.log('WiFi-Code erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // vCard/Contact-Codes ignorieren
+  if (text.startsWith('BEGIN:VCARD') || text.includes('FN:') || text.includes('TEL:')) {
+    console.log('vCard erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // SMS/MMS-Codes ignorieren
+  if (text.startsWith('SMSTO:') || text.startsWith('sms:') || text.startsWith('tel:')) {
+    console.log('SMS/Tel-Code erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // Geo-Location-Codes ignorieren
+  if (text.startsWith('geo:') || text.includes('latitude') || text.includes('longitude')) {
+    console.log('Geo-Location erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // Kalenderevent-Codes ignorieren
+  if (text.startsWith('BEGIN:VEVENT') || text.includes('DTSTART:') || text.includes('SUMMARY:')) {
+    console.log('Kalenderevent erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // Nur alphanumerische Zeichen, Leerzeichen, und häufige Satzzeichen erlauben
+  const allowedCharsPattern = /^[a-zA-Z0-9\s\-_.,!?äöüÄÖÜß]+$/;
+  if (!allowedCharsPattern.test(text)) {
+    console.log('Unerlaubte Zeichen erkannt, ignoriere:', text);
+    return false;
+  }
+  
+  // Prüfe auf zu viele Sonderzeichen (mehr als 20% der Gesamtlänge)
+  const specialChars = text.match(/[^a-zA-Z0-9\s]/g);
+  if (specialChars && (specialChars.length / text.length) > 0.2) {
+    console.log('Zu viele Sonderzeichen, ignoriere:', text);
+    return false;
+  }
+  
+  // Prüfe auf mindestens einen Buchstaben (keine reinen Zahlenfolgen)
+  if (!/[a-zA-ZäöüÄÖÜß]/.test(text)) {
+    console.log('Keine Buchstaben gefunden, ignoriere:', text);
+    return false;
+  }
+  
+  console.log('Gültiger Text-Code erkannt:', text);
+  return true;
+}
+
+// Erweiterte QR-Code-Validierung mit Qualitätsprüfung
+function validateQRCodeQuality(qrCode) {
+  if (!qrCode || !qrCode.data) {
+    return false;
+  }
+  
+  // Prüfe die Erkennungsqualität anhand der Location-Punkte
+  if (qrCode.location) {
+    const { topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner } = qrCode.location;
+    
+    // Berechne die Fläche des erkannten QR-Codes
+    const width1 = Math.abs(topRightCorner.x - topLeftCorner.x);
+    const width2 = Math.abs(bottomRightCorner.x - bottomLeftCorner.x);
+    const height1 = Math.abs(bottomLeftCorner.y - topLeftCorner.y);
+    const height2 = Math.abs(bottomRightCorner.y - topRightCorner.y);
+    
+    // QR-Code sollte eine Mindestgröße haben (zu kleine sind oft Falscherkennung)
+    const minSize = 50; // Pixel
+    if (width1 < minSize || width2 < minSize || height1 < minSize || height2 < minSize) {
+      console.log('QR-Code zu klein, ignoriere:', qrCode.data);
+      return false;
+    }
+    
+    // QR-Code sollte nicht zu verzerrt sein (Verhältnis von Breite zu Höhe)
+    const ratio1 = width1 / height1;
+    const ratio2 = width2 / height2;
+    if (ratio1 < 0.7 || ratio1 > 1.3 || ratio2 < 0.7 || ratio2 > 1.3) {
+      console.log('QR-Code zu verzerrt, ignoriere:', qrCode.data);
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 // Sound-Feedback Funktion
@@ -202,7 +342,7 @@ async function startCamera(deviceId = null) {
 
 function startQRScanning() {
   console.log('Starte Code-Scanning...');
-  updateStatus('🔍 Scanner aktiv - halte Code vor die Kamera', 'scanning');
+  updateStatus('🔍 Scanner aktiv', 'scanning');
   
   // Initialisiere erweiterte Barcode-Unterstützung, falls verfügbar
   if (!barcodeSupport && window.BarcodeSupport) {
@@ -210,7 +350,7 @@ function startQRScanning() {
     barcodeSupport.initialize().then(success => {
       if (success) {
         console.log('Erweiterte Barcode-Unterstützung aktiviert');
-        updateStatus('🔍 Scanner aktiv - QR-Codes und Barcodes werden unterstützt', 'scanning');
+        updateStatus('🔍 Scanner aktiv - Text-QR-Codes und Text-Barcodes werden erkannt', 'scanning');
       }
     });
   }
@@ -236,71 +376,105 @@ function startQRScanning() {
           inversionAttempts: "dontInvert",
         });
         
-        if (qrCode) {
+        if (qrCode && validateQRCodeQuality(qrCode) && isValidTextCode(qrCode.data)) {
           detectedCode = { text: qrCode.data, format: 'QR-Code' };
         }
       }
       
       // Falls jsQR nicht verfügbar oder kein QR-Code gefunden, versuche ZXing
+      // Aber nur für erweiterte Barcodes, nicht für QR-Codes (um Doppelerkennung zu vermeiden)
       if (!detectedCode && barcodeSupport) {
         const barcodeResult = await barcodeSupport.scanBarcode(imageData);
-        if (barcodeResult) {
+        if (barcodeResult && barcodeResult.format !== 'QR-Code' && isValidTextCode(barcodeResult.text)) {
           detectedCode = { text: barcodeResult.text, format: barcodeResult.format };
         }
       }
       
-      // Prüfe, ob es ein neuer Code ist (nicht der gleiche wie vorhin)
-      if (detectedCode && detectedCode.text !== lastScannedCode) {
-        console.log(`${detectedCode.format} gefunden:`, detectedCode.text);
-        
-        // Merke den Code, um Duplikate zu vermeiden
-        lastScannedCode = detectedCode.text;
-        
-        // Spiele Beep-Sound ab
-        playBeepSound();
-        
-        // Pausiere Scanning für 10 Sekunden
-        isPaused = true;
-        resetPauseBtn.style.display = 'inline-block'; // Zeige Reset-Button
-        updateStatus(`📱 ${detectedCode.format}: ${detectedCode.text} - Wird gesendet...`, 'success');
-        
-        // Zeige Countdown
-        showCountdown(10);
-        
-        // Sende Code an Main Process
-        if (window.electronAPI && window.electronAPI.codeScanned) {
-          try {
-            const result = await window.electronAPI.codeScanned(detectedCode.text);
+      // Prüfe, ob es ein neuer Code ist und implementiere Bestätigungslogik
+      if (detectedCode) {
+        // Wenn es der gleiche Code ist wie beim letzten Scan
+        if (pendingCode && pendingCode.text === detectedCode.text) {
+          codeConfirmationCount++;
+          console.log(`Code-Bestätigung ${codeConfirmationCount}/3:`, detectedCode.text);
+          
+          // Erst nach 3 aufeinanderfolgenden Erkennungen akzeptieren
+          if (codeConfirmationCount >= 3 && detectedCode.text !== lastScannedCode) {
+            console.log(`✅ ${detectedCode.format} bestätigt:`, detectedCode.text);
             
-            if (result.success) {
-              console.log('Code erfolgreich gesendet:', result);
-              updateStatus(`✅ ${detectedCode.format}: ${detectedCode.text} - Erfolgreich gesendet!`, 'success');
-            } else {
-              console.error('Fehler beim Senden:', result.error);
-              updateStatus(`❌ ${detectedCode.format}: ${detectedCode.text} - Fehler: ${result.error}`, 'error');
-            }
-          } catch (error) {
-            console.error('Fehler beim Senden:', error);
-            updateStatus(`❌ ${detectedCode.format}: ${detectedCode.text} - Verbindungsfehler`, 'error');
+            // Code wurde bestätigt, verarbeiten
+            processValidatedCode(detectedCode);
+            
+            // Reset der Bestätigungslogik
+            pendingCode = null;
+            codeConfirmationCount = 0;
           }
         } else {
-          console.warn('electronAPI nicht verfügbar');
-          updateStatus(`⚠️ ${detectedCode.format}: ${detectedCode.text} - API nicht verfügbar`, 'error');
+          // Neuer Code erkannt, starte Bestätigungslogik
+          pendingCode = detectedCode;
+          codeConfirmationCount = 1;
+          console.log(`🔍 Neuer Code erkannt, warte auf Bestätigung:`, detectedCode.text);
         }
-        
-        // Auto-Reset nach 10 Sekunden
-        pauseTimeout = setTimeout(() => {
-          resetPause();
-        }, 10000);
+      } else {
+        // Kein Code erkannt, reset der Bestätigungslogik
+        if (pendingCode) {
+          console.log('Code-Erkennung unterbrochen, reset');
+          pendingCode = null;
+          codeConfirmationCount = 0;
+        }
       }
     }
   }, 250); // Alle 250ms scannen
+}
+
+// Funktion zur Verarbeitung bestätigter Codes
+async function processValidatedCode(detectedCode) {
+  // Merke den Code, um Duplikate zu vermeiden
+  lastScannedCode = detectedCode.text;
+  
+  // Spiele Beep-Sound ab
+  playBeepSound();
+  
+  // Pausiere Scanning für 10 Sekunden
+  isPaused = true;
+  resetPauseBtn.style.display = 'inline-block'; // Zeige Reset-Button
+  updateStatus(`📱 ${detectedCode.format}: ${detectedCode.text} - Wird gesendet...`, 'success');
+  
+  // Zeige Countdown
+  showCountdown(10);
+  
+  // Sende Code an Main Process
+  if (window.electronAPI && window.electronAPI.codeScanned) {
+    try {
+      const result = await window.electronAPI.codeScanned(detectedCode.text);
+      
+      if (result.success) {
+        console.log('Code erfolgreich gesendet:', result);
+        updateStatus(`✅ ${detectedCode.format}: ${detectedCode.text} - Erfolgreich gesendet!`, 'success');
+      } else {
+        console.error('Fehler beim Senden:', result.error);
+        updateStatus(`❌ ${detectedCode.format}: ${detectedCode.text} - Fehler: ${result.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('Fehler beim Senden:', error);
+      updateStatus(`❌ ${detectedCode.format}: ${detectedCode.text} - Verbindungsfehler`, 'error');
+    }
+  } else {
+    console.warn('electronAPI nicht verfügbar');
+    updateStatus(`⚠️ ${detectedCode.format}: ${detectedCode.text} - API nicht verfügbar`, 'error');
+  }
+  
+  // Auto-Reset nach 10 Sekunden
+  pauseTimeout = setTimeout(() => {
+    resetPause();
+  }, 10000);
 }
 
 // Funktion zum Zurücksetzen der Pause
 function resetPause() {
   isPaused = false;
   lastScannedCode = null;
+  pendingCode = null;
+  codeConfirmationCount = 0;
   resetPauseBtn.style.display = 'none';
   countdownDisplay.style.display = 'none';
   
@@ -314,7 +488,7 @@ function resetPause() {
     countdownInterval = null;
   }
   
-  updateStatus('🔍 Scanner aktiv - halte Code vor die Kamera', 'scanning');
+  updateStatus('🔍 Scanner aktiv', 'scanning');
 }
 
 function handleError(e) {
@@ -375,7 +549,12 @@ tabCheckbox.onchange = () => {
 };
 
 testBtn.onclick = async () => {
+  // Verhindere mehrfache Klicks
+  if (testBtn.disabled) return;
+  
   try {
+    testBtn.disabled = true;
+    testBtn.textContent = '⏳ Teste...';
     updateStatus('🧪 Teste Tastatur-Eingabe...', 'scanning');
     
     const result = await window.electronAPI.codeScanned('TEST123');
@@ -387,13 +566,17 @@ testBtn.onclick = async () => {
     }
   } catch (error) {
     updateStatus(`❌ Tastatur-Test Fehler: ${error.message}`, 'error');
+  } finally {
+    // Button nach 3 Sekunden wieder aktivieren
+    setTimeout(() => {
+      testBtn.disabled = false;
+      testBtn.textContent = '⌨️ Tastatur testen';
+      
+      if (!isPaused) {
+        updateStatus('🔍 Scanner aktiv', 'scanning');
+      }
+    }, 3000);
   }
-  
-  setTimeout(() => {
-    if (!isPaused) {
-      updateStatus('🔍 Scanner aktiv - halte Code vor die Kamera', 'scanning');
-    }
-  }, 3000);
 };
 
 resetPauseBtn.onclick = () => {

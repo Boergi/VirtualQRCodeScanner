@@ -20,15 +20,6 @@
     <div class="main-layout">
       <!-- Video Section -->
       <section class="video-section">
-        <div class="camera-controls">
-          <div class="form-group">
-            <label for="cameraSelect" class="form-label">📹 Kamera auswählen</label>
-            <select id="cameraSelect" class="form-select">
-              <option value="">Lade verfügbare Kameras...</option>
-            </select>
-          </div>
-        </div>
-
         <div class="video-container">
           <video id="video" autoplay playsinline></video>
           <div class="video-overlay" id="videoOverlay" style="display: none;">
@@ -76,6 +67,13 @@
           </button>
           
           <div id="settingsDiv" class="settings-content">
+            <div class="form-group">
+              <label for="cameraSelect" class="form-label">📹 Kamera auswählen</label>
+              <select id="cameraSelect" class="form-select">
+                <option value="">Lade verfügbare Kameras...</option>
+              </select>
+            </div>
+            
             <div class="checkbox-group">
               <div class="checkbox-item">
                 <input type="checkbox" id="enterCheckbox">
