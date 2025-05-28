@@ -13,6 +13,10 @@ const tabCheckbox = document.getElementById('tabCheckbox');
 const cameraSelect = document.getElementById('cameraSelect');
 const testBtn = document.getElementById('testBtn');
 const resetPauseBtn = document.getElementById('resetPauseBtn');
+const countdownDisplay = document.getElementById('countdownDisplay');
+const countdownTimer = document.getElementById('countdownTimer');
+const videoOverlay = document.getElementById('videoOverlay');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 let scanning = false;
 let retryTimeout;
@@ -25,6 +29,44 @@ let barcodeSupport = null;
 let isPaused = false;
 let lastScannedCode = null;
 let pauseTimeout = null;
+let countdownInterval = null;
+
+// Status-Update-Funktion für moderne UI
+function updateStatus(message, type = 'scanning') {
+  const statusContent = resultDiv.querySelector('.status-content');
+  statusContent.textContent = message;
+  
+  // Entferne alle Status-Klassen
+  resultDiv.classList.remove('status-scanning', 'status-success', 'status-error', 'status-paused');
+  
+  // Füge passende Klasse hinzu
+  resultDiv.classList.add(`status-${type}`);
+}
+
+// Countdown-Display-Funktion
+function showCountdown(seconds) {
+  countdownDisplay.style.display = 'block';
+  countdownTimer.textContent = seconds;
+  
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+  
+  countdownInterval = setInterval(() => {
+    seconds--;
+    countdownTimer.textContent = seconds;
+    
+    if (seconds <= 0) {
+      clearInterval(countdownInterval);
+      countdownDisplay.style.display = 'none';
+    }
+  }, 1000);
+}
+
+// Loading-Overlay für Video
+function showVideoLoading(show = true) {
+  videoOverlay.style.display = show ? 'flex' : 'none';
+}
 
 // Sound-Feedback Funktion
 function playBeepSound() {
@@ -52,6 +94,9 @@ async function loadCameras() {
   console.log('Starte loadCameras...');
   
   try {
+    showVideoLoading(true);
+    updateStatus('Kameras werden geladen...', 'scanning');
+    
     // Erst Berechtigung anfordern, damit wir Labels bekommen
     const testStream = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: 'environment' } 
@@ -69,33 +114,37 @@ async function loadCameras() {
     cameraSelect.innerHTML = '';
     
     if (cameras.length === 0) {
-      cameraSelect.innerHTML = '<option value="">Keine Kameras gefunden</option>';
-      resultDiv.textContent = 'Keine Kameras gefunden';
+      cameraSelect.innerHTML = '<option value="">❌ Keine Kameras gefunden</option>';
+      updateStatus('Keine Kameras verfügbar', 'error');
+      showVideoLoading(false);
       return;
     }
     
     cameras.forEach((camera, index) => {
       const option = document.createElement('option');
       option.value = camera.deviceId;
-      option.textContent = camera.label || `Kamera ${index + 1}`;
+      option.textContent = camera.label || `📹 Kamera ${index + 1}`;
       cameraSelect.appendChild(option);
       console.log(`Kamera ${index + 1}:`, camera.label || 'Kein Label', camera.deviceId);
     });
     
     availableCameras = cameras;
+    updateStatus('Kameras geladen - Bereit zum Starten', 'success');
     
     console.log('Kamera-Laden erfolgreich, verfügbare Kameras:', cameras.length);
   } catch (e) {
     console.error('Fehler beim Laden der Kameras:', e);
-    resultDiv.textContent = 'Fehler beim Laden: ' + e.message;
-    cameraSelect.innerHTML = '<option value="">Fehler beim Laden</option>';
+    updateStatus('Fehler beim Laden: ' + e.message, 'error');
+    cameraSelect.innerHTML = '<option value="">❌ Fehler beim Laden</option>';
+    showVideoLoading(false);
   }
 }
 
 async function startCamera(deviceId = null) {
   try {
     console.log('Starte Kamera mit deviceId:', deviceId);
-    resultDiv.textContent = 'Kamera wird gestartet...';
+    showVideoLoading(true);
+    updateStatus('Kamera wird gestartet...', 'scanning');
     
     // Stoppe vorherigen Stream und Scanning
     if (scanningInterval) {
@@ -125,7 +174,8 @@ async function startCamera(deviceId = null) {
     
     video.onloadedmetadata = () => {
       console.log('Video-Metadaten geladen');
-      resultDiv.textContent = 'Kamera aktiv - Scanner wird initialisiert...';
+      showVideoLoading(false);
+      updateStatus('Kamera aktiv - Scanner wird initialisiert...', 'scanning');
       
       // Canvas für QR-Code-Scanning erstellen
       if (!scanningCanvas) {
@@ -144,14 +194,15 @@ async function startCamera(deviceId = null) {
     
   } catch (e) {
     console.error('Kamera-Fehler:', e);
-    resultDiv.textContent = `Kamera-Fehler: ${e.message}`;
+    showVideoLoading(false);
+    updateStatus(`Kamera-Fehler: ${e.message}`, 'error');
     handleError(e);
   }
 }
 
 function startQRScanning() {
   console.log('Starte Code-Scanning...');
-  resultDiv.textContent = 'Scanner aktiv - halte Code vor die Kamera';
+  updateStatus('🔍 Scanner aktiv - halte Code vor die Kamera', 'scanning');
   
   // Initialisiere erweiterte Barcode-Unterstützung, falls verfügbar
   if (!barcodeSupport && window.BarcodeSupport) {
@@ -159,7 +210,7 @@ function startQRScanning() {
     barcodeSupport.initialize().then(success => {
       if (success) {
         console.log('Erweiterte Barcode-Unterstützung aktiviert');
-        resultDiv.textContent = 'Scanner aktiv - QR-Codes und Barcodes werden unterstützt';
+        updateStatus('🔍 Scanner aktiv - QR-Codes und Barcodes werden unterstützt', 'scanning');
       }
     });
   }
@@ -211,11 +262,10 @@ function startQRScanning() {
         // Pausiere Scanning für 10 Sekunden
         isPaused = true;
         resetPauseBtn.style.display = 'inline-block'; // Zeige Reset-Button
-        resultDiv.textContent = `${detectedCode.format}: ${detectedCode.text} - Sende...`;
+        updateStatus(`📱 ${detectedCode.format}: ${detectedCode.text} - Wird gesendet...`, 'success');
         
-        // Visuelles Feedback
-        resultDiv.style.backgroundColor = '#004400';
-        resultDiv.style.color = 'white';
+        // Zeige Countdown
+        showCountdown(10);
         
         // Sende Code an Main Process
         if (window.electronAPI && window.electronAPI.codeScanned) {
@@ -224,35 +274,24 @@ function startQRScanning() {
             
             if (result.success) {
               console.log('Code erfolgreich gesendet:', result);
-              resultDiv.textContent = `${detectedCode.format}: ${detectedCode.text} - ✓ Gesendet - Pause 10s`;
-              resultDiv.style.backgroundColor = '#006600';
+              updateStatus(`✅ ${detectedCode.format}: ${detectedCode.text} - Erfolgreich gesendet!`, 'success');
             } else {
               console.error('Fehler beim Senden:', result.error);
-              resultDiv.textContent = `${detectedCode.format}: ${detectedCode.text} - ✗ Fehler: ${result.error}`;
-              resultDiv.style.backgroundColor = '#660000';
+              updateStatus(`❌ ${detectedCode.format}: ${detectedCode.text} - Fehler: ${result.error}`, 'error');
             }
           } catch (error) {
             console.error('Fehler beim Senden:', error);
-            resultDiv.textContent = `${detectedCode.format}: ${detectedCode.text} - ✗ Verbindungsfehler`;
-            resultDiv.style.backgroundColor = '#660000';
+            updateStatus(`❌ ${detectedCode.format}: ${detectedCode.text} - Verbindungsfehler`, 'error');
           }
         } else {
           console.warn('electronAPI nicht verfügbar');
-          resultDiv.textContent = `${detectedCode.format}: ${detectedCode.text} - API nicht verfügbar`;
-          resultDiv.style.backgroundColor = '#666600';
+          updateStatus(`⚠️ ${detectedCode.format}: ${detectedCode.text} - API nicht verfügbar`, 'error');
         }
         
-        // Starte 10-Sekunden Countdown
-        let countdown = 10;
-        const countdownInterval = setInterval(() => {
-          countdown--;
-          if (countdown > 0) {
-            resultDiv.textContent = `Pause noch ${countdown}s - Code wegziehen`;
-          } else {
-            clearInterval(countdownInterval);
-            resetPause();
-          }
-        }, 1000);
+        // Auto-Reset nach 10 Sekunden
+        pauseTimeout = setTimeout(() => {
+          resetPause();
+        }, 10000);
       }
     }
   }, 250); // Alle 250ms scannen
@@ -263,24 +302,41 @@ function resetPause() {
   isPaused = false;
   lastScannedCode = null;
   resetPauseBtn.style.display = 'none';
+  countdownDisplay.style.display = 'none';
   
-  resultDiv.textContent = 'Scanner aktiv - halte Code vor die Kamera';
-  resultDiv.style.backgroundColor = '';
-  resultDiv.style.color = '';
+  if (pauseTimeout) {
+    clearTimeout(pauseTimeout);
+    pauseTimeout = null;
+  }
+  
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  
+  updateStatus('🔍 Scanner aktiv - halte Code vor die Kamera', 'scanning');
 }
 
 function handleError(e) {
-  resultDiv.textContent = `Fehler: ${e && e.message ? e.message : e}`;
+  let errorMessage = `❌ Fehler: ${e && e.message ? e.message : e}`;
+  
   if (e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')) {
-    resultDiv.textContent += '\nBitte Kamera-Rechte in den macOS-Systemeinstellungen aktivieren.';
+    errorMessage += '\n💡 Bitte Kamera-Rechte in den macOS-Systemeinstellungen aktivieren.';
   }
+  
+  updateStatus(errorMessage, 'error');
   scanning = false;
+  showVideoLoading(false);
+  
   if (retryTimeout) clearTimeout(retryTimeout);
   retryTimeout = setTimeout(() => startCamera(), 2000);
 }
 
 retryBtn.onclick = () => {
-  if (!scanning) startCamera();
+  if (!scanning) {
+    showVideoLoading(true);
+    startCamera();
+  }
 };
 
 cameraSelect.onchange = () => {
@@ -290,43 +346,53 @@ cameraSelect.onchange = () => {
 };
 
 settingsBtn.onclick = async () => {
-  settingsDiv.style.display = settingsDiv.style.display === 'none' ? 'block' : 'none';
-  const settings = await window.electronAPI.getSettings();
-  enterCheckbox.checked = settings.sendEnter;
-  tabCheckbox.checked = settings.sendTab;
+  const isVisible = settingsDiv.classList.contains('active');
+  
+  if (isVisible) {
+    settingsDiv.classList.remove('active');
+    settingsBtn.textContent = '⚙️ Einstellungen';
+  } else {
+    settingsDiv.classList.add('active');
+    settingsBtn.textContent = '✕ Schließen';
+    
+    // Lade aktuelle Einstellungen
+    try {
+      const settings = await window.electronAPI.getSettings();
+      enterCheckbox.checked = settings.sendEnter;
+      tabCheckbox.checked = settings.sendTab;
+    } catch (e) {
+      console.error('Fehler beim Laden der Einstellungen:', e);
+    }
+  }
 };
 
 enterCheckbox.onchange = () => {
   window.electronAPI.setSettings({ sendEnter: enterCheckbox.checked });
 };
+
 tabCheckbox.onchange = () => {
   window.electronAPI.setSettings({ sendTab: tabCheckbox.checked });
 };
 
 testBtn.onclick = async () => {
   try {
-    resultDiv.textContent = 'Teste Tastatur-Eingabe...';
-    resultDiv.style.backgroundColor = '#004488';
-    resultDiv.style.color = 'white';
+    updateStatus('🧪 Teste Tastatur-Eingabe...', 'scanning');
     
     const result = await window.electronAPI.codeScanned('TEST123');
     
     if (result.success) {
-      resultDiv.textContent = 'Tastatur-Test erfolgreich! (TEST123 wurde getippt)';
-      resultDiv.style.backgroundColor = '#006600';
+      updateStatus('✅ Tastatur-Test erfolgreich! (TEST123 wurde getippt)', 'success');
     } else {
-      resultDiv.textContent = `Tastatur-Test fehlgeschlagen: ${result.error}`;
-      resultDiv.style.backgroundColor = '#660000';
+      updateStatus(`❌ Tastatur-Test fehlgeschlagen: ${result.error}`, 'error');
     }
   } catch (error) {
-    resultDiv.textContent = `Tastatur-Test Fehler: ${error.message}`;
-    resultDiv.style.backgroundColor = '#660000';
+    updateStatus(`❌ Tastatur-Test Fehler: ${error.message}`, 'error');
   }
   
   setTimeout(() => {
-    resultDiv.style.backgroundColor = '';
-    resultDiv.style.color = '';
-    resultDiv.textContent = 'Scanner aktiv - halte Code vor die Kamera';
+    if (!isPaused) {
+      updateStatus('🔍 Scanner aktiv - halte Code vor die Kamera', 'scanning');
+    }
   }, 3000);
 };
 
@@ -334,8 +400,19 @@ resetPauseBtn.onclick = () => {
   resetPause();
 };
 
+fullscreenBtn.onclick = () => {
+  if (video.requestFullscreen) {
+    video.requestFullscreen();
+  } else if (video.webkitRequestFullscreen) {
+    video.webkitRequestFullscreen();
+  } else if (video.msRequestFullscreen) {
+    video.msRequestFullscreen();
+  }
+};
+
 window.onload = async () => {
   console.log('Seite geladen, starte Initialisierung...');
+  updateStatus('🚀 Initialisierung...', 'scanning');
   
   // Zunächst Kameras laden (um Dropdown zu füllen)
   await loadCameras();

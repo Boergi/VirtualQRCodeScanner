@@ -1,0 +1,25 @@
+/* Favicon as Data URI - QR Code Icon */
+/* This creates a simple QR code-like icon for the browser tab */
+.qr-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  border-radius: 4px;
+  position: relative;
+}
+
+.qr-icon::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  background: 
+    /* QR pattern simulation */
+    radial-gradient(circle at 25% 25%, white 2px, transparent 2px),
+    radial-gradient(circle at 75% 25%, white 2px, transparent 2px),
+    radial-gradient(circle at 25% 75%, white 2px, transparent 2px),
+    linear-gradient(45deg, white 1px, transparent 1px, transparent 3px, white 1px);
+  background-size: 8px 8px, 8px 8px, 8px 8px, 4px 4px;
+}
