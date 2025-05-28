@@ -153,26 +153,31 @@ body {
   padding: 1rem;
   margin-bottom: 1rem;
   border-left: 4px solid var(--secondary-color);
+  position: relative;
 }
 
-.status-title {
-  font-weight: 600;
+.status-icon {
+  font-size: 1.5rem;
   margin-bottom: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  display: block;
+  text-align: center;
 }
 
 .status-content {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: var(--text-primary);
   word-break: break-all;
+  text-align: center;
+  margin-bottom: 0.5rem;
 }
 
 .status-scanning {
   border-left-color: var(--secondary-color);
   animation: pulse 2s infinite;
+}
+
+.status-scanning .status-icon {
+  animation: rotate 2s linear infinite;
 }
 
 .status-success {
@@ -185,6 +190,45 @@ body {
 
 .status-paused {
   border-left-color: var(--warning-color);
+}
+
+/* Animations für Status-Icons */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.status-paused .status-icon {
+  animation: blink 1s infinite;
+}
+
+/* Countdown Display - Integriert in Status */
+.countdown-display-integrated {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  text-align: center;
+  border: 2px solid var(--warning-color);
+  margin-top: 0.75rem;
+}
+
+.countdown-timer {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--warning-color);
+  margin-bottom: 0.25rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.countdown-text {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes pulse {
@@ -340,18 +384,8 @@ body {
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   border: 2px solid var(--warning-color);
-}
-
-.countdown-timer {
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--warning-color);
-  margin-bottom: 0.5rem;
-}
-
-.countdown-text {
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  /* Entfernt - wird jetzt in Status integriert */
+  display: none !important;
 }
 
 /* Icons */
@@ -374,6 +408,88 @@ body {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Scroll Indicators */
+.scroll-indicator {
+  position: fixed;
+  right: 1rem;
+  z-index: 1000;
+  background: rgba(79, 70, 229, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.8);
+}
+
+.scroll-indicator.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.scroll-indicator:hover {
+  background: rgba(67, 56, 202, 0.95);
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-indicator.up {
+  top: 50%;
+  animation: bounceUp 2s infinite;
+}
+
+.scroll-indicator.down {
+  bottom: 2rem;
+  animation: bounceDown 2s infinite;
+}
+
+@keyframes bounceUp {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-8px) scale(1.05);
+  }
+  60% {
+    transform: translateY(-4px) scale(1.02);
+  }
+}
+
+@keyframes bounceDown {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(8px) scale(1.05);
+  }
+  60% {
+    transform: translateY(4px) scale(1.02);
+  }
+}
+
+/* Verbesserte Scroll-Smooth-Funktionalität */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Verstecke Scroll-Indikatoren bei sehr kleinen Bildschirmen */
+@media (max-height: 500px) {
+  .scroll-indicator {
+    display: none;
+  }
 }
 
 /* Responsive Design */

@@ -17,6 +17,9 @@ const countdownDisplay = document.getElementById('countdownDisplay');
 const countdownTimer = document.getElementById('countdownTimer');
 const videoOverlay = document.getElementById('videoOverlay');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
+const scrollUpIndicator = document.getElementById('scrollUpIndicator');
+const scrollDownIndicator = document.getElementById('scrollDownIndicator');
+const statusIcon = document.getElementById('statusIcon');
 
 let scanning = false;
 let retryTimeout;
@@ -33,10 +36,20 @@ let countdownInterval = null;
 let pendingCode = null; // Für Code-Bestätigung
 let codeConfirmationCount = 0; // Anzahl der Bestätigungen
 
-// Status-Update-Funktion für moderne UI
+// Status-Update-Funktion für moderne UI mit Icons
 function updateStatus(message, type = 'scanning') {
   const statusContent = resultDiv.querySelector('.status-content');
   statusContent.textContent = message;
+  
+  // Icon basierend auf Status-Typ setzen
+  const icons = {
+    scanning: '🔍',
+    success: '✅',
+    error: '❌',
+    paused: '⏸️'
+  };
+  
+  statusIcon.textContent = icons[type] || '🔍';
   
   // Entferne alle Status-Klassen
   resultDiv.classList.remove('status-scanning', 'status-success', 'status-error', 'status-paused');
@@ -45,10 +58,13 @@ function updateStatus(message, type = 'scanning') {
   resultDiv.classList.add(`status-${type}`);
 }
 
-// Countdown-Display-Funktion
+// Countdown-Display-Funktion - jetzt im Status integriert
 function showCountdown(seconds) {
   countdownDisplay.style.display = 'block';
   countdownTimer.textContent = seconds;
+  
+  // Status auf Pause setzen mit Timer-Icon
+  updateStatus(`Pause - nächster Scan in ${seconds}s`, 'paused');
   
   if (countdownInterval) {
     clearInterval(countdownInterval);
@@ -57,6 +73,7 @@ function showCountdown(seconds) {
   countdownInterval = setInterval(() => {
     seconds--;
     countdownTimer.textContent = seconds;
+    updateStatus(`Pause - nächster Scan in ${seconds}s`, 'paused');
     
     if (seconds <= 0) {
       clearInterval(countdownInterval);
@@ -593,6 +610,51 @@ fullscreenBtn.onclick = () => {
   }
 };
 
+// Scroll-Indikator-Funktionalität
+function updateScrollIndicators() {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight;
+  const clientHeight = document.documentElement.clientHeight;
+  const scrollBottom = scrollHeight - clientHeight;
+  
+  // Zeige "Nach oben" Indikator wenn nicht ganz oben
+  if (scrollTop > 100) {
+    scrollUpIndicator.classList.add('visible');
+  } else {
+    scrollUpIndicator.classList.remove('visible');
+  }
+  
+  // Zeige "Nach unten" Indikator wenn nicht ganz unten
+  if (scrollTop < scrollBottom - 100) {
+    scrollDownIndicator.classList.add('visible');
+  } else {
+    scrollDownIndicator.classList.remove('visible');
+  }
+}
+
+// Smooth Scroll Funktionen
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+function scrollToBottom() {
+  window.scrollTo({
+    top: document.documentElement.scrollHeight,
+    behavior: 'smooth'
+  });
+}
+
+// Event Listeners für Scroll-Indikatoren
+scrollUpIndicator.onclick = scrollToTop;
+scrollDownIndicator.onclick = scrollToBottom;
+
+// Scroll Event Listener
+window.addEventListener('scroll', updateScrollIndicators);
+window.addEventListener('resize', updateScrollIndicators);
+
 window.onload = async () => {
   console.log('Seite geladen, starte Initialisierung...');
   updateStatus('🚀 Initialisierung...', 'scanning');
@@ -608,4 +670,7 @@ window.onload = async () => {
     console.log('Keine Kameras verfügbar, starte Standard-Kamera...');
     await startCamera();
   }
+  
+  // Initialisiere Scroll-Indikatoren
+  updateScrollIndicators();
 };

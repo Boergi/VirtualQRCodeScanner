@@ -29,8 +29,14 @@
         </div>
 
         <div class="status-display" id="result">
-          <div class="status-title">Status</div>
+          <div class="status-icon" id="statusIcon">🔍</div>
           <div class="status-content">Bereit zum Scannen...</div>
+          
+          <!-- Countdown Display hier integriert -->
+          <div id="countdownDisplay" class="countdown-display-integrated" style="display: none;">
+            <div class="countdown-timer" id="countdownTimer">10</div>
+            <div class="countdown-text">Sekunden bis zum nächsten Scan</div>
+          </div>
         </div>
       </section>
 
@@ -53,12 +59,6 @@
         <button id="fullscreenBtn" class="btn btn-secondary btn-block">
           🔍 Vollbild-Modus
         </button>
-
-        <!-- Countdown Display -->
-        <div id="countdownDisplay" class="countdown-display" style="display: none;">
-          <div class="countdown-timer" id="countdownTimer">10</div>
-          <div class="countdown-text">Sekunden bis zum nächsten Scan</div>
-        </div>
 
         <!-- Settings Section -->
         <div class="settings-section">
@@ -93,6 +93,14 @@
         </div>
       </aside>
     </div>
+
+    <!-- Scroll Indicators -->
+    <button id="scrollUpIndicator" class="scroll-indicator up" title="Nach oben scrollen">
+      ↑
+    </button>
+    <button id="scrollDownIndicator" class="scroll-indicator down" title="Nach unten scrollen">
+      ↓
+    </button>
   </div>
   <!-- jsQR für QR-Code-Scanning (von CDN laden) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
