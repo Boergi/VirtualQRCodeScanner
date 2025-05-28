@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Virtual QRCode Scanner</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #222; color: #fff; }
+    #video { width: 100%; max-width: 600px; margin: 20px auto; display: block; background: #000; }
+    #result { margin: 20px; font-size: 1.2em; }
+    #retry { margin: 10px; }
+    #settingsDiv { display: none; background: #333; padding: 10px; border-radius: 8px; margin: 10px; }
+    #settingsBtn { margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Virtual QRCode Scanner</h1>
+  <div style="margin: 10px;">
+    <label for="cameraSelect">Kamera auswählen:</label>
+    <select id="cameraSelect" style="margin-left: 10px; padding: 5px;">
+      <option value="">Lade Kameras...</option>
+    </select>
+  </div>
+  <video id="video" autoplay></video>
+  <div id="result">Scanning...</div>
+  <button id="retry">Retry</button>
+  <button id="settingsBtn">Einstellungen</button>
+  <button id="testBtn">Test Tastatur</button>
+  <button id="resetPauseBtn" style="display: none;">Pause beenden</button>
+  <div id="settingsDiv">
+    <label><input type="checkbox" id="enterCheckbox"> Enter nach Senden</label><br>
+    <label><input type="checkbox" id="tabCheckbox"> Tab nach Senden</label>
+    <br><br>
+    <small>💡 Tipp: Für Tastatur-Eingabe muss die App Accessibility-Berechtigung in den macOS-Systemeinstellungen haben.</small>
+  </div>
+  <!-- jsQR für QR-Code-Scanning (von CDN laden) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  
+  <!-- Optional: ZXing für erweiterte Barcode-Unterstützung -->
+  <script>
+    // Versuche ZXing zu laden, falls verfügbar
+    try {
+      const script = document.createElement('script');
+      script.src = 'node_modules/@zxing/browser/umd/index.min.js';
+      script.onerror = () => console.log('ZXing nicht verfügbar - nur QR-Codes werden unterstützt');
+      document.head.appendChild(script);
+    } catch (e) {
+      console.log('ZXing konnte nicht geladen werden');
+    }
+  </script>
+  <script src="barcode-support.js"></script>
+  <script src="diagnose.js"></script>
+  <script src="renderer.js"></script>
+  <script>
+    // Debug-Informationen
+    window.addEventListener('load', () => {
+      console.log('Seite geladen');
+      console.log('navigator.mediaDevices verfügbar:', !!navigator.mediaDevices);
+      console.log('getUserMedia verfügbar:', !!navigator.mediaDevices?.getUserMedia);
+    });
+  </script>
+</body>
+</html>

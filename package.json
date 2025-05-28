@@ -1,0 +1,20 @@
+{
+  "name": "virtual-qrcode-scanner",
+  "version": "1.0.0",
+  "description": "Electron app for live QR/Barcode scanning and keyboard emulation.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@zxing/browser": "^0.1.0",
+    "canvas": "^3.1.0",
+    "electron": "^29.0.0",
+    "jsbarcode": "^3.11.6",
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4",
+    "robotjs": "^0.6.0"
+  }
+}

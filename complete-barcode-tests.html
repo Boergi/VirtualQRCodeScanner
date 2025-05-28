@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vollständige Barcode/QR-Tests</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .code-image { text-align: center; margin: 10px 0; }
+        img { max-width: 300px; border: 1px solid #ccc; }
+        .format { color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>VirtualQRCodeScanner - Vollständige Tests</h1>
+    
+    <h2>QR-Codes</h2>
+    
+    <div class="test-container">
+        <h3>Hello World</h3>
+        <div class="format">Format: QR-Code</div>
+        <div class="code-image">
+            <img src="test-qr-hello.png" alt="QR: Hello World">
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>https://github.com</h3>
+        <div class="format">Format: QR-Code</div>
+        <div class="code-image">
+            <img src="test-qr-url.png" alt="QR: https://github.com">
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>1234567890</h3>
+        <div class="format">Format: QR-Code</div>
+        <div class="code-image">
+            <img src="test-qr-numbers.png" alt="QR: 1234567890">
+        </div>
+    </div>
+    
+    
+    <h2>Barcodes</h2>
+    
+    <div class="test-container">
+        <h3>123456789012</h3>
+        <div class="format">Format: UPC</div>
+        <div class="code-image">
+            <img src="test-barcode-upc.png" alt="UPC: 123456789012">
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>1234567890128</h3>
+        <div class="format">Format: EAN13</div>
+        <div class="code-image">
+            <img src="test-barcode-ean13.png" alt="EAN13: 1234567890128">
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>HELLO123</h3>
+        <div class="format">Format: CODE128</div>
+        <div class="code-image">
+            <img src="test-barcode-code128.png" alt="CODE128: HELLO123">
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>12345</h3>
+        <div class="format">Format: CODE39</div>
+        <div class="code-image">
+            <img src="test-barcode-code39.png" alt="CODE39: 12345">
+        </div>
+    </div>
+    
+    
+    <div class="test-container">
+        <h2>Test-Anweisungen</h2>
+        <ol>
+            <li>Starte die VirtualQRCodeScanner App</li>
+            <li>Vergewissere dich, dass die Kamera funktioniert und das Dropdown Kameras anzeigt</li>
+            <li>Teste jeden Code, indem du ihn vor die Kamera hältst</li>
+            <li>Der erkannte Text sollte automatisch in das aktive Fenster getippt werden</li>
+            <li>Prüfe die Einstellungen (Enter/Tab nach dem Code)</li>
+        </ol>
+        
+        <h3>Erwartete Unterstützung:</h3>
+        <ul>
+            <li>✅ QR-Codes (alle Texte)</li>
+            <li>✅ Code128 (alphanumerisch)</li>
+            <li>✅ EAN13 (13-stellige Zahlen)</li>
+            <li>✅ Code39 (alphanumerisch, begrenzt)</li>
+            <li>✅ UPC (12-stellige Zahlen)</li>
+        </ul>
+    </div>
+</body>
+</html>

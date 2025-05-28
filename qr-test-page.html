@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR-Code Tests für VirtualQRCodeScanner</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .qr-container { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        .qr-code { text-align: center; }
+        img { max-width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>QR-Code Tests</h1>
+    <p>Verwende diese QR-Codes zum Testen der VirtualQRCodeScanner App:</p>
+    
+    
+    <div class="qr-container">
+        <h3>Test: Hello World</h3>
+        <div class="qr-code">
+            <img src="test-hello-world.png" alt="QR-Code: Hello World">
+        </div>
+        <p>Erwarteter Output: <code>Hello World</code></p>
+    </div>
+    
+    <div class="qr-container">
+        <h3>Test: https://github.com</h3>
+        <div class="qr-code">
+            <img src="test-github-url.png" alt="QR-Code: https://github.com">
+        </div>
+        <p>Erwarteter Output: <code>https://github.com</code></p>
+    </div>
+    
+    <div class="qr-container">
+        <h3>Test: 1234567890</h3>
+        <div class="qr-code">
+            <img src="test-numbers.png" alt="QR-Code: 1234567890">
+        </div>
+        <p>Erwarteter Output: <code>1234567890</code></p>
+    </div>
+    
+    <div class="qr-container">
+        <h3>Test: TEST-BARCODE-123</h3>
+        <div class="qr-code">
+            <img src="test-barcode.png" alt="QR-Code: TEST-BARCODE-123">
+        </div>
+        <p>Erwarteter Output: <code>TEST-BARCODE-123</code></p>
+    </div>
+    
+    
+    <div class="qr-container">
+        <h3>Anweisungen:</h3>
+        <ol>
+            <li>Öffne die VirtualQRCodeScanner App</li>
+            <li>Stelle sicher, dass die Kamera funktioniert</li>
+            <li>Halte einen der QR-Codes vor die Kamera</li>
+            <li>Der erkannte Text sollte automatisch getippt werden</li>
+        </ol>
+    </div>
+</body>
+</html>
