@@ -254,6 +254,38 @@ async function loadCameras() {
     showVideoLoading(true);
     updateStatus('Kameras werden geladen...', 'scanning');
     
+    // Überprüfe Kamera-Berechtigung auf macOS
+    try {
+      const permissionStatus = await window.electronAPI.checkCameraPermission();
+      console.log('Kamera-Berechtigungsstatus:', permissionStatus);
+      
+      if (permissionStatus.platform === 'darwin') {
+        if (permissionStatus.status === 'denied') {
+          updateStatus('⚠️ Kamera-Berechtigung verweigert. Bitte in Systemeinstellungen > Datenschutz & Sicherheit > Kamera aktivieren.', 'error');
+          showVideoLoading(false);
+          cameraSelect.innerHTML = '<option value="">❌ Kamera-Berechtigung verweigert</option>';
+          return;
+        } else if (permissionStatus.status === 'not-determined') {
+          updateStatus('Kamera-Berechtigung wird angefragt...', 'scanning');
+          const requestResult = await window.electronAPI.requestCameraPermission();
+          console.log('Berechtigung angefragt:', requestResult);
+          
+          if (!requestResult.granted) {
+            updateStatus('⚠️ Kamera-Berechtigung erforderlich für das Scannen.', 'error');
+            showVideoLoading(false);
+            cameraSelect.innerHTML = '<option value="">❌ Berechtigung erforderlich</option>';
+            return;
+          }
+          updateStatus('✅ Kamera-Berechtigung erteilt', 'success');
+        } else if (permissionStatus.status === 'granted') {
+          console.log('✅ Kamera-Berechtigung bereits vorhanden');
+        }
+      }
+    } catch (permError) {
+      console.warn('Fehler bei Berechtigungsprüfung:', permError);
+      // Fahre trotzdem fort, da es auf anderen Plattformen normal ist
+    }
+    
     // Erst Berechtigung anfordern, damit wir Labels bekommen
     const testStream = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: 'environment' } 

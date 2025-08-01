@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSCameraUsageDescription</key>
+    <string>QR Scanner Pro benötigt Kamera-Zugriff zum Scannen von QR-Codes und Barcodes.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>QR Scanner Pro benötigt optional Mikrofon-Zugriff für Audio-Feedback beim Scannen.</string>
+    <key>CFBundleDisplayName</key>
+    <string>QR Scanner Pro</string>
+    <key>CFBundleName</key>
+    <string>QR Scanner Pro</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.virtualqrcodescanner.app</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.14.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
+    <true/>
+</dict>
+</plist>

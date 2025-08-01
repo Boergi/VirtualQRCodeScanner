@@ -2,6 +2,10 @@
 
 Ein Electron-basierter QR-Code/Barcode-Scanner für Windows und macOS, der live Kamera-Feeds scannt und erkannte Codes automatisch in das aktive Fenster tippt.
 
+## Lizenz
+
+Dieses Projekt ist nur für die private Nutzung lizenziert.
+
 ## Features
 
 - **Live Kamera-Scanning**: Echtzeiterfassung von QR-Codes und Barcodes
@@ -111,3 +115,19 @@ Die App verfügt über ein modernes, professionelles Design mit:
 - **Status-Display**: Intelligente Statusanzeige mit verschiedenen Zuständen
 - **Einstellungen**: Ausklappbares Einstellungsmenü
 - **Button-Design**: Moderne Buttons mit Hover-Effekten und Animationen
+
+## Troubleshooting
+
+### Windows-Tastatur-Probleme
+Falls die automatische Tastatur-Eingabe unter Windows nicht funktioniert, siehe: **[WINDOWS-TROUBLESHOOTING.md](WINDOWS-TROUBLESHOOTING.md)**
+
+Häufige Lösungen:
+- App als Administrator ausführen
+- PowerShell Execution Policy prüfen: `Get-ExecutionPolicy`
+- Test-Script ausführen: `node test-windows-keyboard.js`
+- Windows Defender Ausnahmen hinzufügen
+
+### macOS-Berechtigungen
+Für macOS sind Kamera- und Accessibility-Berechtigungen erforderlich:
+1. Systemeinstellungen → Sicherheit → Kamera → QR Scanner Pro aktivieren
+2. Systemeinstellungen → Sicherheit → Bedienungshilfen → QR Scanner Pro aktivieren

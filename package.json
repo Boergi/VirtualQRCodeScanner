@@ -1,42 +1,74 @@
+
 {
   "name": "virtual-qrcode-scanner",
   "version": "1.0.0",
-  "description": "Electron app for live QR/Barcode scanning and keyboard emulation.",
+  "description": "Live QR/Barcode Scanner with Keyboard Emulation",
   "main": "main.js",
+  "author": "BoergiM",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
     "build-mac": "electron-builder --mac",
     "build-win": "electron-builder --win",
-    "build-linux": "electron-builder --linux"
+    "build-win-x64": "electron-builder --win --x64",
+    "build-win-x86": "electron-builder --win --ia32",
+    "build-linux": "electron-builder --linux",
+    "dist": "electron-builder --publish=never"
   },
-  "author": "",
-  "license": "MIT",
   "build": {
-    "appId": "com.qrscanner.virtual",
+    "appId": "com.virtualqrcodescanner.app",
     "productName": "QR Scanner Pro",
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "**/*",
-      "!test-*.png"
-    ],
     "mac": {
       "icon": "icons/icon.icns",
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.productivity",
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "extendInfo": {
+        "NSCameraUsageDescription": "Diese App benötigt Kamera-Zugriff für QR-Code und Barcode Scanning.",
+        "NSMicrophoneUsageDescription": "Diese App benötigt optional Mikrofon-Zugriff für Audio-Feedback."
+      }
     },
     "win": {
-      "icon": "icons/icon.ico"
+      "icon": "icons/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        }
+      ]
     },
     "linux": {
-      "icon": "icons/icon-512x512.png"
-    }
+      "icon": "icons/icon-512x512.png",
+      "target": "AppImage"
+    },
+    "files": [
+      "**/*",
+      "!test-*.png",
+      "!dist/**/*",
+      "!node_modules/**/*",
+      "node_modules/robotjs/**/*",
+      "node_modules/jsqr/**/*",
+      "node_modules/@zxing/**/*",
+      "node_modules/canvas/**/*"
+    ],
+    "nodeGypRebuild": false,
+    "npmRebuild": false
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.0",
     "canvas": "^3.1.0",
-    "electron": "^29.0.0",
     "jsbarcode": "^3.11.6",
     "jsqr": "^1.4.0",
     "qrcode": "^1.5.4",

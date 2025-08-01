@@ -41,18 +41,46 @@ class KeyboardFallback {
   }
 
   async typeStringWindows(text) {
-    // PowerShell implementation for Windows
-    const psScript = `
-      Add-Type -AssemblyName System.Windows.Forms
-      [System.Windows.Forms.SendKeys]::SendWait("${text}")
+    // Escape special characters for PowerShell
+    const escapedText = text
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/'/g, "\\'")
+      .replace(/\{/g, '{{')
+      .replace(/\}/g, '}}')
+      .replace(/\+/g, '{+}')
+      .replace(/\^/g, '{^}')
+      .replace(/%/g, '{%}')
+      .replace(/~/g, '{~}')
+      .replace(/\(/g, '{(}')
+      .replace(/\)/g, '{)}')
+      .replace(/\[/g, '{[}')
+      .replace(/\]/g, '{]}');
+    
+    // Alternative: Use VBScript for better compatibility
+    const vbsScript = `
+      Set objShell = CreateObject("WScript.Shell")
+      objShell.SendKeys "${escapedText}"
     `;
     
     try {
-      await execAsync(`powershell -Command "${psScript}"`);
+      // Try PowerShell first
+      const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${escapedText}')`;
+      await execAsync(`powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psScript}"`);
       return true;
-    } catch (error) {
-      console.error('PowerShell Fehler:', error.message);
-      throw error;
+    } catch (psError) {
+      console.warn('PowerShell failed, trying VBScript:', psError.message);
+      try {
+        // Fallback to VBScript
+        const tempFile = require('path').join(require('os').tmpdir(), 'sendkeys.vbs');
+        require('fs').writeFileSync(tempFile, vbsScript);
+        await execAsync(`cscript //NoLogo "${tempFile}"`);
+        require('fs').unlinkSync(tempFile);
+        return true;
+      } catch (vbsError) {
+        console.error('VBScript also failed:', vbsError.message);
+        throw new Error(`Both PowerShell and VBScript failed: ${psError.message}, ${vbsError.message}`);
+      }
     }
   }
 
@@ -121,21 +149,41 @@ class KeyboardFallback {
       case 'space':
         psKey = ' ';
         break;
+      case 'escape':
+        psKey = '{ESC}';
+        break;
+      case 'backspace':
+        psKey = '{BS}';
+        break;
+      case 'delete':
+        psKey = '{DEL}';
+        break;
       default:
         psKey = `{${key.toUpperCase()}}`;
     }
 
-    const psScript = `
-      Add-Type -AssemblyName System.Windows.Forms
-      [System.Windows.Forms.SendKeys]::SendWait("${psKey}")
-    `;
-
     try {
-      await execAsync(`powershell -Command "${psScript}"`);
+      // Try PowerShell first
+      const psScript = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${psKey}')`;
+      await execAsync(`powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psScript}"`);
       return true;
-    } catch (error) {
-      console.error('PowerShell keyTap Fehler:', error.message);
-      throw error;
+    } catch (psError) {
+      console.warn('PowerShell keyTap failed, trying VBScript:', psError.message);
+      try {
+        // Fallback to VBScript
+        const vbsScript = `
+          Set objShell = CreateObject("WScript.Shell")
+          objShell.SendKeys "${psKey}"
+        `;
+        const tempFile = require('path').join(require('os').tmpdir(), 'sendkey.vbs');
+        require('fs').writeFileSync(tempFile, vbsScript);
+        await execAsync(`cscript //NoLogo "${tempFile}"`);
+        require('fs').unlinkSync(tempFile);
+        return true;
+      } catch (vbsError) {
+        console.error('VBScript keyTap also failed:', vbsError.message);
+        throw new Error(`Both PowerShell and VBScript failed: ${psError.message}, ${vbsError.message}`);
+      }
     }
   }
 }
